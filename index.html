@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="utf-8" />
+    <script type="module">
+        import svg from './js/svg.js';
+        import initShader from './js/shader.js';
+
+        function parametersFromForm() {
+            const getValue = id => parseFloat(document.getElementById(id).value);
+
+            return Array.from(document.getElementsByTagName('input'))
+                .reduce(function (result, input) {
+                    result[input.name] = getValue(input.id);
+                    return result;
+                }, {});
+        }
+
+        function normalizedParameters(parameters) {
+            const unit = parameters.sphereRadius,
+                result = { unit: unit };
+
+            for (let key in parameters) {
+                if (!['sphereDisks'].includes(key)) {
+                    result[key] = parameters[key] / unit;
+                } else {
+                    result[key] = parameters[key];
+                }
+            }
+            return result;
+        }
+
+        function saveBlob(blob, fileName) {
+            var a = document.createElement("a");
+            document.body.appendChild(a);
+            a.style = "display: none";
+
+            var url = window.URL.createObjectURL(blob);
+            a.href = url;
+            a.download = fileName;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        };
+
+        function saveSvg() {
+            const blob = new Blob([(new XMLSerializer).serializeToString(document.getElementById('svg').firstChild)], { type: "image/svg+xml" });
+            saveBlob(blob, "skulptur.svg");
+        }
+
+        export default function calculate() {
+            const p = parametersFromForm();
+            p.normalized = normalizedParameters(p);
+            initShader(p);
+            document.getElementById('svg').innerHTML = svg(p);
+        }
+
+        window.saveSvg = saveSvg;
+        window.calculate = calculate;
+        calculate();
+    </script>
+</head>
+
+<body>
+    <form action="javascript:calculate()">
+        <fieldset>
+            <legend>Kugel</legend>
+            <label for="sphere-radius">Radius (mm):</label>
+            <input id="sphere-radius" name="sphereRadius" type="number" min="1" value="200" />
+            <label for="sphere-disks">Scheiben:</label>
+            <input id="sphere-disks" name="sphereDisks" type="number" step="1" min="1" value="13" />
+            <label for="sphere-drill-radius">Radius Bohrung (mm):</label>
+            <input id="sphere-drill-radius" name="sphereDrillRadius" type="number" step="1" min="0" value="10" />
+        </fieldset>
+        <fieldset>
+            <legend>Kegel:</legend>
+            <label for="cone-length">Länge (mm):</label>
+            <input id="cone-length" name="coneLength" type="number" step="1" min="1" value="600" />
+            <label for="cone-radius">Radius der Basis (mm):</label>
+            <input id="cone-radius" name="coneRadius" type="number" step="1" min="1" value="130" />
+            <label for="cone-vertical-offset">Vertikaler Abstand zur Kugelmitte (mm):</label>
+            <input id="cone-vertical-offset" name="coneVerticalOffset" type="number" step="1" min="0" value="125" />
+        </fieldset>
+        <fieldset>
+            <legend>Metallplatte</legend>
+            <label for="plate-length">Länge (mm):</label>
+            <input id="plate-length" name="plateLength" type="number" step="1" min="1" value="1000" />
+            <label for="plate-width">Breite (mm):</label>
+            <input id="plate-width" name="plateWidth" type="number" step="1" min="1" value="1500" />
+            <label for="plate-thickness">Dicke (mm):</label>
+            <input id="plate-thickness" name="plateThickness" type="number" step="1" min="1" value="5" />
+        </fieldset>
+        <button id="calculateBtn" type="submit">Berechnen</button>
+    </form>
+    <form action="javascript:saveSvg()">
+        <button id="calculateBtn" type="submit">SVG speichern</button>
+    </form>
+    <canvas id="shader-canvas" width="800" height="450"></canvas>
+    <!-- https://stackoverflow.com/questions/15181452/how-to-save-export-inline-svg-styled-with-css-from-browser-to-image-file -->
+    <div id='svg'>
+
+    </div>
+</body>
+
+</html>
